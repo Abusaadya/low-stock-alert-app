@@ -50,7 +50,7 @@ app.get('/oauth/login', (req, res) => {
         client_id: process.env.SALLA_CLIENT_ID,
         response_type: 'code',
         redirect_uri: process.env.SALLA_CALLBACK_URL,
-        scope: 'products.read offline_access',
+        scope: 'products.read webhooks.read_write offline_access',
         state: state
     });
     res.redirect(`${process.env.SALLA_AUTHORIZATION_URL}?${params.toString()}`);
