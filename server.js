@@ -81,7 +81,12 @@ app.get('/oauth/callback', async (req, res) => {
 
     } catch (error) {
         console.error('OAuth Error:', error);
-        res.status(500).send('Authentication failed');
+        res.status(500).send(`
+            <h1>Authentication Failed</h1>
+            <p>Error: ${error.message}</p>
+            <pre>${JSON.stringify(error.response?.data || {}, null, 2)}</pre>
+            <p>Stack: ${error.stack}</p>
+        `);
     }
 });
 
