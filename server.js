@@ -167,6 +167,52 @@ app.post('/webhooks/app-events', async (req, res) => {
 });
 
 
+// Debug Route: Check & Subscribe to Webhooks
+app.get('/debug/webhooks', async (req, res) => {
+    try {
+        // 1. Get the most recent merchant
+        const merchant = await Merchant.findOne({ order: [['updatedAt', 'DESC']] });
+        if (!merchant) return res.send('No merchant found in DB');
+
+        const token = merchant.access_token;
+        const axios = require('axios');
+
+        // 2. Define Webhook Config
+        const webhookUrl = process.env.SALLA_CALLBACK_URL.replace('/oauth/callback', '/webhooks/app-events');
+        const eventToSubscribe = 'product.updated';
+
+        // 3. Try to Subscribe
+        try {
+            const response = await axios.post('https://api.salla.dev/admin/v2/webhooks/subscribe', {
+                name: 'Low Stock Alert Hook',
+                event: eventToSubscribe,
+                url: webhookUrl,
+                version: '2'
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            res.send(`
+                <h1>Webhook Subscription Attempt</h1>
+                <p>Status: Success</p>
+                <pre>${JSON.stringify(response.data, null, 2)}</pre>
+            `);
+        } catch (apiError) {
+            // If it fails, maybe let's list existing ones
+            res.send(`
+                <h1>Webhook Subscription Failed</h1>
+                <p>Error: ${apiError.response?.data?.error?.message || apiError.message}</p>
+                <pre>${JSON.stringify(apiError.response?.data || {}, null, 2)}</pre>
+            `);
+        }
+
+    } catch (error) {
+        res.status(500).send('Server Error: ' + error.message);
+    }
+});
+
 // Sync Database and Start Server
 // Only listen if not running in production (Vercel manages the port)
 if (require.main === module) {
