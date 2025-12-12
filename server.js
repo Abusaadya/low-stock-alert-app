@@ -15,6 +15,17 @@ app.get('/', (req, res) => {
     res.send('Low Stock Alert App is Running! 🚀 <br> <a href="/oauth/login">Login with Salla</a>');
 });
 
+// Manual DB Init for Vercel
+app.get('/init-db', async (req, res) => {
+    try {
+        await sequelize.sync({ alter: true });
+        res.send('Database synchronized successfully! Tables created.');
+    } catch (error) {
+        console.error('Sync Error:', error);
+        res.status(500).send('Error syncing database: ' + error.message);
+    }
+});
+
 // OAuth Login
 app.get('/oauth/login', (req, res) => {
     const params = new URLSearchParams({
