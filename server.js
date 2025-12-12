@@ -27,6 +27,21 @@ app.get('/init-db', async (req, res) => {
     }
 });
 
+// Test Email Route
+app.get('/test-email', async (req, res) => {
+    try {
+        await emailService.sendLowStockAlert(
+            process.env.EMAIL_USER,
+            'TEST PRODUCT',
+            0,
+            5
+        );
+        res.send(`Test email sent to ${process.env.EMAIL_USER}. Check your inbox/spam.`);
+    } catch (error) {
+        res.status(500).send('Failed to send email: ' + error.message);
+    }
+});
+
 
 
 app.get('/oauth/login', (req, res) => {
