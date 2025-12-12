@@ -77,18 +77,22 @@ app.get('/oauth/callback', async (req, res) => {
         // Let's use findOne and update/create manually for safety.
 
         let existingMerchant = await Merchant.findByPk(merchantInfo.id);
+        const defaultEmail = process.env.EMAIL_USER; // Use admin email as default for testing
+
         if (existingMerchant) {
             await existingMerchant.update({
                 access_token: tokenData.access_token,
                 refresh_token: tokenData.refresh_token,
-                expires_in: tokenData.expires_in
+                expires_in: tokenData.expires_in,
+                alert_email: existingMerchant.alert_email || defaultEmail // Set if missing
             });
         } else {
             await Merchant.create({
                 merchant_id: merchantInfo.id,
                 access_token: tokenData.access_token,
                 refresh_token: tokenData.refresh_token,
-                expires_in: tokenData.expires_in
+                expires_in: tokenData.expires_in,
+                alert_email: defaultEmail // Default for new installs
             });
         }
 
