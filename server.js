@@ -167,51 +167,61 @@ app.post('/webhooks/app-events', async (req, res) => {
 });
 
 
-// Debug Route: Check & Subscribe to Webhooks
-app.get('/debug/webhooks', async (req, res) => {
-    try {
-        const merchant = await Merchant.findOne({ order: [['updatedAt', 'DESC']] });
-        if (!merchant) return res.send('No merchant found in DB');
+try {
+    const merchants = await Merchant.findAll();
+    if (!merchants || merchants.length === 0) return res.send('No merchants found in DB');
 
-        const token = merchant.access_token;
-        const axios = require('axios');
-        const webhookUrl = process.env.SALLA_CALLBACK_URL.replace('/oauth/callback', '/webhooks/app-events');
+    // We will just use the first valid token for webhook checking, or iterate?
+    // Let's just list them for now to debug the ID issue.
+    const token = merchants[0].access_token; // Use the first one for API checks for now
 
-        // Events to subscribe
-        const events = ['product.updated', 'product.created'];
-        let logHtml = `<h2>Merchant ID: ${merchant.merchant_id}</h2>`;
-        logHtml += `<p>Email in DB: <strong>${merchant.alert_email || 'NOT SET (Login again!)'}</strong></p>`;
+    let logHtml = `<h1>Registered Merchants (${merchants.length})</h1>`;
+    logHtml += '<ul>';
+    merchants.forEach(m => {
+        logHtml += `<li>ID: <b>${m.merchant_id}</b> | Email: ${m.alert_email || '<span style="color:red">NULL</span>'}</li>`;
+    });
+    logHtml += '</ul>';
 
-        // 1. Subscribe to events
-        for (const event of events) {
-            try {
-                await axios.post('https://api.salla.dev/admin/v2/webhooks/subscribe', {
-                    name: 'Stock App Hook - ' + event,
-                    event: event,
-                    url: webhookUrl,
-                    version: '2'
-                }, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
-                logHtml += `<p style="color:green">✅ Subscribed to <b>${event}</b></p>`;
-            } catch (err) {
-                logHtml += `<p style="color:red">❌ Failed to subscribe to <b>${event}</b>: ${err.response?.data?.error?.message || err.message}</p>`;
-            }
-        }
+    // ... rest of the logic usually needs a specific token. 
+    // Let's keep the webhook check logic but just warn it uses the first token.
+    const axios = require('axios');
+    const webhookUrl = process.env.SALLA_CALLBACK_URL.replace('/oauth/callback', '/webhooks/app-events');
 
-        // 2. List Active Webhooks
+    // Events to subscribe
+    const events = ['product.updated', 'product.created'];
+    let logHtml = `<h2>Merchant ID: ${merchant.merchant_id}</h2>`;
+    logHtml += `<p>Email in DB: <strong>${merchant.alert_email || 'NOT SET (Login again!)'}</strong></p>`;
+
+    // 1. Subscribe to events
+    for (const event of events) {
         try {
-            const listRes = await axios.get('https://api.salla.dev/admin/v2/webhooks', {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            logHtml += '<h3>Active Webhooks on Salla:</h3><pre>' + JSON.stringify(listRes.data.data, null, 2) + '</pre>';
+            await axios.post('https://api.salla.dev/admin/v2/webhooks/subscribe', {
+                name: 'Stock App Hook - ' + event,
+                event: event,
+                url: webhookUrl,
+                version: '2'
+            }, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
+            logHtml += `<p style="color:green">✅ Subscribed to <b>${event}</b></p>`;
         } catch (err) {
-            logHtml += '<p>Could not list webhooks: ' + err.message + '</p>';
+            logHtml += `<p style="color:red">❌ Failed to subscribe to <b>${event}</b>: ${err.response?.data?.error?.message || err.message}</p>`;
         }
-
-        res.send(logHtml);
-
-    } catch (error) {
-        res.status(500).send('Server Error: ' + error.message);
     }
+
+    // 2. List Active Webhooks
+    try {
+        const listRes = await axios.get('https://api.salla.dev/admin/v2/webhooks', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        logHtml += '<h3>Active Webhooks on Salla:</h3><pre>' + JSON.stringify(listRes.data.data, null, 2) + '</pre>';
+    } catch (err) {
+        logHtml += '<p>Could not list webhooks: ' + err.message + '</p>';
+    }
+
+    res.send(logHtml);
+
+} catch (error) {
+    res.status(500).send('Server Error: ' + error.message);
+}
 });
 
 // Sync Database and Start Server
