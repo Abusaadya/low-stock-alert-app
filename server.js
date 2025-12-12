@@ -170,43 +170,44 @@ app.post('/webhooks/app-events', async (req, res) => {
 // Debug Route: Check & Subscribe to Webhooks
 app.get('/debug/webhooks', async (req, res) => {
     try {
-        // 1. Get the most recent merchant
         const merchant = await Merchant.findOne({ order: [['updatedAt', 'DESC']] });
         if (!merchant) return res.send('No merchant found in DB');
 
         const token = merchant.access_token;
         const axios = require('axios');
-
-        // 2. Define Webhook Config
         const webhookUrl = process.env.SALLA_CALLBACK_URL.replace('/oauth/callback', '/webhooks/app-events');
-        const eventToSubscribe = 'product.updated';
 
-        // 3. Try to Subscribe
-        try {
-            const response = await axios.post('https://api.salla.dev/admin/v2/webhooks/subscribe', {
-                name: 'Low Stock Alert Hook',
-                event: eventToSubscribe,
-                url: webhookUrl,
-                version: '2'
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            res.send(`
-                <h1>Webhook Subscription Attempt</h1>
-                <p>Status: Success</p>
-                <pre>${JSON.stringify(response.data, null, 2)}</pre>
-            `);
-        } catch (apiError) {
-            // If it fails, maybe let's list existing ones
-            res.send(`
-                <h1>Webhook Subscription Failed</h1>
-                <p>Error: ${apiError.response?.data?.error?.message || apiError.message}</p>
-                <pre>${JSON.stringify(apiError.response?.data || {}, null, 2)}</pre>
-            `);
+        // Events to subscribe
+        const events = ['product.updated', 'product.created'];
+        let logHtml = `<h2>Merchant ID: ${merchant.merchant_id}</h2>`;
+        logHtml += `<p>Email in DB: <strong>${merchant.alert_email || 'NOT SET (Login again!)'}</strong></p>`;
+
+        // 1. Subscribe to events
+        for (const event of events) {
+            try {
+                await axios.post('https://api.salla.dev/admin/v2/webhooks/subscribe', {
+                    name: 'Stock App Hook - ' + event,
+                    event: event,
+                    url: webhookUrl,
+                    version: '2'
+                }, { headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' } });
+                logHtml += `<p style="color:green">✅ Subscribed to <b>${event}</b></p>`;
+            } catch (err) {
+                logHtml += `<p style="color:red">❌ Failed to subscribe to <b>${event}</b>: ${err.response?.data?.error?.message || err.message}</p>`;
+            }
         }
+
+        // 2. List Active Webhooks
+        try {
+            const listRes = await axios.get('https://api.salla.dev/admin/v2/webhooks', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            logHtml += '<h3>Active Webhooks on Salla:</h3><pre>' + JSON.stringify(listRes.data.data, null, 2) + '</pre>';
+        } catch (err) {
+            logHtml += '<p>Could not list webhooks: ' + err.message + '</p>';
+        }
+
+        res.send(logHtml);
 
     } catch (error) {
         res.status(500).send('Server Error: ' + error.message);
