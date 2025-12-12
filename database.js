@@ -1,4 +1,3 @@
-```javascript
 const { Sequelize } = require('sequelize');
 const path = require('path');
 
@@ -11,10 +10,10 @@ if (process.env.DATABASE_URL) {
     protocol: 'postgres',
     logging: false,
     dialectOptions: {
-        ssl: {
-            require: true,
-            rejectUnauthorized: false
-        }
+      ssl: {
+        require: true,
+        rejectUnauthorized: false
+      }
     }
   });
 } else {
@@ -27,4 +26,3 @@ if (process.env.DATABASE_URL) {
 }
 
 module.exports = { sequelize };
-```
