@@ -67,13 +67,18 @@ app.get('/oauth/callback', async (req, res) => {
     }
 
     try {
+        console.log(`[OAuth] Salla returned code: ${code}`);
+
         // 1. Exchange code for token
         const tokenData = await sallaAuth.getAccessToken(code);
+        console.log('[OAuth] Access Token received');
 
         // 2. Get Merchant Info (to get the ID)
         const merchantInfo = await sallaAuth.getMerchantInfo(tokenData.access_token);
+        console.log(`[OAuth] Merchant Info: ID=${merchantInfo.id}, Name=${merchantInfo.name}`);
 
         // 3. Save/Update in DB
+        console.log('[OAuth] Attempting to upsert Merchant...');
         const [merchant, created] = await Merchant.upsert({
             merchant_id: merchantInfo.id,
             access_token: tokenData.access_token,
@@ -84,6 +89,7 @@ app.get('/oauth/callback', async (req, res) => {
             // Ideally we should check if exists, but for MVP upsert is fine, just careful about settings.
             // To preserve settings, we can findOne then update or create.
         });
+        console.log(`[OAuth] Merchant upsert complete. Created? ${created}`);
 
         // Let's refine the DB save logic to preserve settings if exists
         // Actually upsert is fine if we only pass the token fields, but we defined all fields in model.
@@ -93,6 +99,7 @@ app.get('/oauth/callback', async (req, res) => {
 
         let existingMerchant = await Merchant.findByPk(merchantInfo.id);
         const defaultEmail = process.env.EMAIL_USER; // Use admin email as default for testing
+        console.log(`[OAuth] Updating email for merchant ${merchantInfo.id}...`);
 
         if (existingMerchant) {
             await existingMerchant.update({
@@ -101,7 +108,9 @@ app.get('/oauth/callback', async (req, res) => {
                 expires_in: tokenData.expires_in,
                 alert_email: existingMerchant.alert_email || defaultEmail // Set if missing
             });
+            console.log('[OAuth] Merchant updated successfully.');
         } else {
+            console.log('[OAuth] Creating NEW Merchant record...');
             await Merchant.create({
                 merchant_id: merchantInfo.id,
                 access_token: tokenData.access_token,
@@ -109,6 +118,7 @@ app.get('/oauth/callback', async (req, res) => {
                 expires_in: tokenData.expires_in,
                 alert_email: defaultEmail // Default for new installs
             });
+            console.log('[OAuth] New merchant created successfully.');
         }
 
         res.send(`<h1>Authorization Successful!</h1> <p>Welcome, ${merchantInfo.name}. Your App is installed.</p>`);
