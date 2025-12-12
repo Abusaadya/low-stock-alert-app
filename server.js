@@ -129,10 +129,16 @@ app.post('/webhooks/app-events', async (req, res) => {
 
 
 // Sync Database and Start Server
-sequelize.sync().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server is running on http://localhost:${PORT}`);
+// Only listen if not running in production (Vercel manages the port)
+if (require.main === module) {
+    sequelize.sync().then(() => {
+        app.listen(PORT, () => {
+            console.log(`Server is running on http://localhost:${PORT}`);
+        });
+    }).catch(err => {
+        console.error('Unable to connect to the database:', err);
     });
-}).catch(err => {
-    console.error('Unable to connect to the database:', err);
-});
+}
+
+// Export for Vercel
+module.exports = app;
