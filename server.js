@@ -26,13 +26,23 @@ app.get('/init-db', async (req, res) => {
     }
 });
 
-// OAuth Login
+const crypto = require('crypto'); // Add this at the top or inside the handler if preferred, but top is better. 
+// However, to avoid replacing the whole file header, I'll use it inline or require it inside if I can't reach the top easily without huge context.
+// Actually, require('crypto') is a core module. I'll put it inside the function for minimal diff impact if I don't want to touch imports, but good practice is top.
+// Let's check imports. Lines 1-4 are imports.
+// I'll try to insert it at top? No, replace_file_content is better with chunks.
+// I will insert the state generation logic inside the route.
+
+const crypto = require('crypto');
+
 app.get('/oauth/login', (req, res) => {
+    const state = crypto.randomBytes(16).toString('hex');
     const params = new URLSearchParams({
         client_id: process.env.SALLA_CLIENT_ID,
         response_type: 'code',
         redirect_uri: process.env.SALLA_CALLBACK_URL,
-        scope: 'products.read offline_access' // Added scopes
+        scope: 'products.read offline_access',
+        state: state
     });
     res.redirect(`${process.env.SALLA_AUTHORIZATION_URL}?${params.toString()}`);
 });
