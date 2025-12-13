@@ -46,4 +46,3 @@ const Merchant = sequelize.define('Merchant', {
 });
 
 module.exports = Merchant;
-```
