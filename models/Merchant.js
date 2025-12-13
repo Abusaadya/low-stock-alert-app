@@ -27,19 +27,15 @@ const Merchant = sequelize.define('Merchant', {
         type: DataTypes.STRING,
         allowNull: true
     },
-    phone_number: {
-        type: DataTypes.STRING,
-        allowNull: true
-    },
     notify_email: {
         type: DataTypes.BOOLEAN,
         defaultValue: true
     },
-    notify_sms: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false
+    custom_webhook_url: {
+        type: DataTypes.STRING,
+        allowNull: true // For n8n/Zapier URL
     },
-    notify_whatsapp: {
+    notify_webhook: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     }
