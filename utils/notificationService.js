@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 // Initialize Email Transporter
 const emailTransporter = nodemailer.createTransport({
@@ -9,27 +10,22 @@ const emailTransporter = nodemailer.createTransport({
     }
 });
 
-// Initialize Twilio (Try/Catch to avoid crash if keys missing)
-let twilioClient;
-try {
-    if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
-        twilioClient = require('twilio')(
-            process.env.TWILIO_ACCOUNT_SID,
-            process.env.TWILIO_AUTH_TOKEN
-        );
-    }
-} catch (e) {
-    console.error('Twilio init error:', e.message);
-}
-
 exports.sendLowStockAlert = async (merchantSettings, product) => {
     const {
-        alert_email, phone_number,
-        notify_email, notify_sms, notify_whatsapp
+        alert_email, custom_webhook_url,
+        notify_email, notify_webhook
     } = merchantSettings;
 
     const { name, currentQuantity, threshold } = product;
-    const messageBody = `⚠️ *Low Stock Alert* ⚠️\nProduct: ${name}\nStock: ${currentQuantity} (Threshold: ${threshold})\nRestock Recommended!`;
+
+    // Payload for Webhook
+    const alertPayload = {
+        event: 'low_stock_alert',
+        product_name: name,
+        current_quantity: currentQuantity,
+        threshold: threshold,
+        timestamp: new Date().toISOString()
+    };
 
     const results = [];
 
@@ -58,35 +54,16 @@ exports.sendLowStockAlert = async (merchantSettings, product) => {
         }
     }
 
-    // 2. SMS Alert (Twilio)
-    if (notify_sms && phone_number && twilioClient) {
+    // 2. Custom Webhook Alert (n8n / Zapier)
+    if (notify_webhook && custom_webhook_url) {
         try {
-            await twilioClient.messages.create({
-                body: messageBody,
-                from: process.env.TWILIO_PHONE_NUMBER,
-                to: phone_number // Must be E.164 format (e.g., +966...)
-            });
-            results.push('SMS sent');
-            console.log(`SMS sent to ${phone_number}`);
+            console.log(`Sending Webhook to: ${custom_webhook_url}`);
+            await axios.post(custom_webhook_url, alertPayload);
+            results.push('Webhook sent');
+            console.log('Webhook dispatched successfully.');
         } catch (err) {
-            console.error('SMS failed:', err.message);
-            results.push(`SMS failed: ${err.message}`);
-        }
-    }
-
-    // 3. WhatsApp Alert (Twilio Sandbox or Business API)
-    if (notify_whatsapp && phone_number && twilioClient) {
-        try {
-            await twilioClient.messages.create({
-                body: messageBody,
-                from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`, // e.g., +14155238886
-                to: `whatsapp:${phone_number}`
-            });
-            results.push('WhatsApp sent');
-            console.log(`WhatsApp sent to ${phone_number}`);
-        } catch (err) {
-            console.error('WhatsApp failed:', err.message);
-            results.push(`WhatsApp failed: ${err.message}`);
+            console.error('Webhook failed:', err.message);
+            results.push(`Webhook failed: ${err.message}`);
         }
     }
 
