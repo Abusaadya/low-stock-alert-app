@@ -29,7 +29,7 @@ app.get('/settings', async (req, res) => {
 
 // Save Settings (POST)
 app.post('/settings', async (req, res) => {
-    const { merchantId, alert_threshold, alert_email, custom_webhook_url, notify_email, notify_webhook } = req.body;
+    const { merchantId, alert_threshold, alert_email, custom_webhook_url, telegram_chat_id, notify_email, notify_webhook } = req.body;
 
     // Security Note: In production, use a session/JWT token, don't trust merchantId from body blindly.
     // For MVP/Demo:
@@ -42,6 +42,7 @@ app.post('/settings', async (req, res) => {
                     alert_threshold,
                     alert_email,
                     custom_webhook_url,
+                    telegram_chat_id,
                     notify_email,
                     notify_webhook
                 });
@@ -56,6 +57,7 @@ app.post('/settings', async (req, res) => {
                 alert_threshold,
                 alert_email,
                 custom_webhook_url,
+                telegram_chat_id,
                 notify_email,
                 notify_webhook
             });

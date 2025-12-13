@@ -12,7 +12,7 @@ const emailTransporter = nodemailer.createTransport({
 
 exports.sendLowStockAlert = async (merchantSettings, product) => {
     const {
-        alert_email, custom_webhook_url,
+        alert_email, custom_webhook_url, telegram_chat_id,
         notify_email, notify_webhook
     } = merchantSettings;
 
@@ -24,6 +24,7 @@ exports.sendLowStockAlert = async (merchantSettings, product) => {
         product_name: name,
         current_quantity: currentQuantity,
         threshold: threshold,
+        merchant_telegram_chat_id: telegram_chat_id, // Critical for routing
         timestamp: new Date().toISOString(),
         raw_salla_data: rawData // Include raw data for debugging in n8n/Make
     };
