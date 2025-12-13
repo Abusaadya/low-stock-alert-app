@@ -13,7 +13,61 @@ app.use(express.urlencoded({ extended: true }));
 
 // Basic Route
 app.get('/', (req, res) => {
-    res.send('Low Stock Alert App is Running! 🚀 <br> <a href="/oauth/login">Login with Salla</a>');
+    res.send('Low Stock Alert App is Running! 🚀 <br> <a href="/oauth/login">Login with Salla</a> <br> <a href="/settings">Settings</a>');
+});
+
+// Settings Page (GET)
+app.get('/settings', async (req, res) => {
+    const fs = require('fs');
+    const path = require('path');
+    const filePath = path.join(__dirname, 'views', 'settings.html');
+
+    // In a real app, we would hydrate the HTML with values from DB if a merchant is logged in.
+    // For now, serving static.
+    res.sendFile(filePath);
+});
+
+// Save Settings (POST)
+app.post('/settings', async (req, res) => {
+    const { merchantId, alert_threshold, alert_email, phone_number, notify_email, notify_sms, notify_whatsapp } = req.body;
+
+    // Security Note: In production, use a session/JWT token, don't trust merchantId from body blindly.
+    // For MVP/Demo:
+    try {
+        if (!merchantId) {
+            // If no ID passed, try to grab the last updated one just for demo convenience
+            const lastMerchant = await Merchant.findOne({ order: [['updatedAt', 'DESC']] });
+            if (lastMerchant) {
+                await lastMerchant.update({
+                    alert_threshold,
+                    alert_email,
+                    phone_number,
+                    notify_email,
+                    notify_sms,
+                    notify_whatsapp
+                });
+                return res.send('Settings Updated for most recent merchant!');
+            }
+            return res.status(400).send('No Merchant ID provided');
+        }
+
+        const merchant = await Merchant.findByPk(merchantId);
+        if (merchant) {
+            await merchant.update({
+                alert_threshold,
+                alert_email,
+                phone_number,
+                notify_email,
+                notify_sms,
+                notify_whatsapp
+            });
+            res.send('Success');
+        } else {
+            res.status(404).send('Merchant not found');
+        }
+    } catch (error) {
+        res.status(500).send(error.message);
+    }
 });
 
 // Manual DB Init for Vercel
