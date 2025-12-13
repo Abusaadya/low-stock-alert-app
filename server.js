@@ -29,7 +29,7 @@ app.get('/settings', async (req, res) => {
 
 // Save Settings (POST)
 app.post('/settings', async (req, res) => {
-    const { merchantId, alert_threshold, alert_email, phone_number, notify_email, notify_sms, notify_whatsapp } = req.body;
+    const { merchantId, alert_threshold, alert_email, custom_webhook_url, notify_email, notify_webhook } = req.body;
 
     // Security Note: In production, use a session/JWT token, don't trust merchantId from body blindly.
     // For MVP/Demo:
@@ -41,10 +41,9 @@ app.post('/settings', async (req, res) => {
                 await lastMerchant.update({
                     alert_threshold,
                     alert_email,
-                    phone_number,
+                    custom_webhook_url,
                     notify_email,
-                    notify_sms,
-                    notify_whatsapp
+                    notify_webhook
                 });
                 return res.send('Settings Updated for most recent merchant!');
             }
@@ -56,10 +55,9 @@ app.post('/settings', async (req, res) => {
             await merchant.update({
                 alert_threshold,
                 alert_email,
-                phone_number,
+                custom_webhook_url,
                 notify_email,
-                notify_sms,
-                notify_whatsapp
+                notify_webhook
             });
             res.send('Success');
         } else {
