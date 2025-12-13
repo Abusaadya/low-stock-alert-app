@@ -118,14 +118,19 @@
             </div>
 
             <div class="form-group">
-                <label>Custom Webhook URL (For automation via n8n/Zapier)</label>
+                <label>Telegram Chat ID</label>
+                <input type="text" id="telegramId" placeholder="e.g. 123456789">
+                <small style="color:#888;">Get this from <b>@userinfobot</b> in Telegram</small>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Webhook URL (Advanced / Optional)</label>
                 <input type="text" id="webhook" placeholder="https://your-n8n-instance.com/webhook/...">
                 <div class="checkbox-group">
                     <input type="checkbox" id="notifyWebhook">
-                    <label style="margin:0; font-weight:normal">Enable Webhook (Advanced)</label>
+                    <label style="margin:0; font-weight:normal">Enable Automation</label>
                 </div>
-                <small style="color:#888;">We will POST a JSON payload:
-                    <code>{ product: "Name", quantity: 3 }</code></small>
+                <small style="color:#888;">We will POST data to this URL.</small>
             </div>
 
             <button type="submit">Save Settings</button>
@@ -148,6 +153,7 @@
                 alert_email: document.getElementById('email').value,
                 // New Fields
                 custom_webhook_url: document.getElementById('webhook').value,
+                telegram_chat_id: document.getElementById('telegramId').value,
                 notify_email: document.getElementById('notifyEmail').checked,
                 notify_webhook: document.getElementById('notifyWebhook').checked
             };
