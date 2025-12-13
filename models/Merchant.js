@@ -26,7 +26,24 @@ const Merchant = sequelize.define('Merchant', {
     alert_email: {
         type: DataTypes.STRING,
         allowNull: true
+    },
+    phone_number: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    notify_email: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: true
+    },
+    notify_sms: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    notify_whatsapp: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 });
 
 module.exports = Merchant;
+```
