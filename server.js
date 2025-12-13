@@ -196,9 +196,11 @@ app.post('/webhooks/app-events', async (req, res) => {
     console.log(`Received Webhook: ${event} for merchant ${merchant}`);
 
     if (event === 'product.updated') {
+        console.log('product.updated payload:', JSON.stringify(data)); // DEBUG: Log full payload
+
         const productId = data.id;
         const currentQuantity = data.quantity;
-        const name = data.name;
+        const name = data.name || 'Unknown Product'; // Fallback
 
         try {
             // Find merchant settings
@@ -213,7 +215,7 @@ app.post('/webhooks/app-events', async (req, res) => {
                     // Use the new Multi-Channel Service
                     const results = await notificationService.sendLowStockAlert(
                         merchantSettings,
-                        { name, currentQuantity, threshold }
+                        { name, currentQuantity, threshold, rawData: data } // Pass rawData
                     );
                     console.log('Notification Results:', results);
                 }

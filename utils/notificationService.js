@@ -16,7 +16,7 @@ exports.sendLowStockAlert = async (merchantSettings, product) => {
         notify_email, notify_webhook
     } = merchantSettings;
 
-    const { name, currentQuantity, threshold } = product;
+    const { name, currentQuantity, threshold, rawData } = product;
 
     // Payload for Webhook
     const alertPayload = {
@@ -24,7 +24,8 @@ exports.sendLowStockAlert = async (merchantSettings, product) => {
         product_name: name,
         current_quantity: currentQuantity,
         threshold: threshold,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        raw_salla_data: rawData // Include raw data for debugging in n8n/Make
     };
 
     const results = [];
