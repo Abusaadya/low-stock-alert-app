@@ -35,6 +35,10 @@ const Merchant = sequelize.define('Merchant', {
         type: DataTypes.STRING,
         allowNull: true // For n8n/Zapier URL
     },
+    telegram_chat_id: {
+        type: DataTypes.STRING,
+        allowNull: true // Store the merchant's personal Chat ID
+    },
     notify_webhook: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
