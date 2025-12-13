@@ -189,7 +189,7 @@ app.get('/oauth/callback', async (req, res) => {
 });
 
 
-const emailService = require('./utils/emailService');
+const notificationService = require('./utils/notificationService');
 
 // Webhook Listener
 app.post('/webhooks/app-events', async (req, res) => {
@@ -199,24 +199,25 @@ app.post('/webhooks/app-events', async (req, res) => {
 
     if (event === 'product.updated') {
         const productId = data.id;
-        const quantity = data.quantity;
-        const productName = data.name; // Assuming 'name' is in the payload
+        const currentQuantity = data.quantity;
+        const name = data.name;
 
         try {
             // Find merchant settings
             const merchantSettings = await Merchant.findByPk(merchant);
 
-            if (merchantSettings && merchantSettings.alert_email) {
+            if (merchantSettings) {
                 const threshold = merchantSettings.alert_threshold;
 
-                if (quantity <= threshold) {
-                    console.log(`Stock low for ${productName} (${quantity} <= ${threshold}). Sending alert...`);
-                    await emailService.sendLowStockAlert(
-                        merchantSettings.alert_email,
-                        productName,
-                        quantity,
-                        threshold
+                if (currentQuantity <= threshold) {
+                    console.log(`Stock low for ${name} (${currentQuantity} <= ${threshold}). Sending alert...`);
+
+                    // Use the new Multi-Channel Service
+                    const results = await notificationService.sendLowStockAlert(
+                        merchantSettings,
+                        { name, currentQuantity, threshold }
                     );
+                    console.log('Notification Results:', results);
                 }
             } else {
                 console.log(`No settings found for merchant ${merchant} or no email configured.`);
